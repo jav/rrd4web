@@ -1,0 +1,111 @@
+<html>
+<head>
+<script type="text/javascript" src="js/dygraph-combined.js"></script>
+<script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript">
+//empty (jav leftovers)
+</script>
+<script type="text/javascript">
+
+function timeSeriesToSet(series){
+	//A series is ['hostname', [[t,v], ..., [t,v]]]
+	var retDict={};
+	var tSeries = series[1];
+	
+	for(var timeVal in tSeries){
+		retDict[tSeries[timeVal][0]] = tSeries[timeVal][1];
+	}
+	return retDict;
+}
+
+function mergeTimeSets(timeStampSet, seriesSets){
+	for(var i=0; i<seriesSets.length;i++){
+		for(var time in seriesSets[i]){
+			timeStampSet[time]=true;
+		}
+	}
+	return timeStampSet;
+}
+
+function timeStampSetToSeries(timeStampSet, seriesSets){
+	console.log("timeStampSetToSeries()");
+	var retArray = [];
+	timeStamps = Object.keys(timeStampSet).sort();
+	for(var i=0; i< timeStamps.length; i++){
+		var time = timeStamps[i];
+		console.log("timeStampSetToSeries(): time:"+time);	
+		var timeArr = [time];
+		for(var j in seriesSets){
+			var seriesSet=seriesSets[j];
+			if(seriesSet.hasOwnProperty(time)){
+				timeArr.push(seriesSet[time]);
+			} else {
+				timeArr.push(null);
+			}
+		}
+		retArray.push(timeArr);
+	}
+	return retArray;
+}
+
+function mergeTimeSeries(series){
+	var timeStampSet = {};
+	var timeSeriesOrder=[];
+	var seriesAsSets = [];
+ 	for(var i=0;i < series.length; i++){
+ 		timeSeriesOrder.push(series[i][0]);
+  		seriesAsSets.push(timeSeriesToSet(series[i]));
+ 	}
+	mergeTimeSets(timeStampSet, seriesAsSets);
+	return timeStampSetToSeries(timeStampSet, seriesAsSets);
+}
+
+function getData(){
+	$.getJSON("http://localhost:8080/rrd/json/my_rrd/1356364800/1356379500/server1/server2/?callback=?",
+	    function(data){
+	    	console.log(data);
+	    	var graphData=[];
+
+			var setOfTimeStamps = {}
+	    	for(var host in data){
+	    		console.log(host + ":"+ data[host].toString() +"("+data[host].length+")");
+	    		for(var i=0; i < data[host].length; i++){
+	    			setOfTimeStamps[data[host][i][0]] = true;
+	    		}
+	    	}
+	    	console.log(Object.keys(setOfTimeStamps).sort().toString());
+
+			tsdata = [];
+			for(var host in data){
+				tsdata.push( [host, data[host]] );
+			}
+			console.log("tsdata: "+tsdata.toString());
+			graphData = mergeTimeSeries(tsdata);
+
+	    	console.log(graphData);
+
+	    	console.log(graphData.toString());
+	  		g2 = new Dygraph(document.getElementById("graphdiv2"),
+            			graphData,
+                       	{
+                        	
+                       	});  	
+	    }
+	);
+//[ [ new Date("2008/05/07"), 175],
+//  [ new Date("2008/05/08"), 170],
+//  [ new Date("2008/05/09"), 180]
+//];
+};
+
+</script>
+</head>
+<body onLoad="getData();">
+Graph below
+    <div id="graphdiv2"></div>
+    <script type="text/javascript">
+      
+    </script>
+Graph above
+</body>
+</html>

@@ -1,0 +1,3 @@
+Updated regexp which parses metric-output form rrdtool fetch.
+In some versions the separator is "=", in others it is ":".
+

@@ -1,0 +1,8 @@
+[paths]
+default = https://oss.stamfest.net/java-rrd-hg/
+
+[ui]
+username = Javier Ubillos <javier@ubillos.org>
+
+[web]
+cacerts =
