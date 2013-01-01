@@ -79,7 +79,7 @@ public class RRDHandler extends HttpServlet {
 		HashMap<String, ArrayList<DataPoint>> dataOut = new HashMap<String, ArrayList<DataPoint>>(); 
 		for(String host : hosts) {
 			System.out.println("Fetching data for host: "+ host);
-			ArrayList<DataPoint> rrdFromHost = getRrdForHost("spotify_BackendRequestFailure_all-hermes-d", host, lowTime, highTime);
+			ArrayList<DataPoint> rrdFromHost = getRrdForHost(rrdName, host, lowTime, highTime);
 			Collections.sort(rrdFromHost,  new Comparator<DataPoint>() {
 			    public int compare(DataPoint a, DataPoint b) {
 			        return a.time - b.time;

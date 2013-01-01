@@ -2,8 +2,10 @@
 <head>
 <script type="text/javascript" src="js/dygraph-combined.js"></script>
 <script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
 <script type="text/javascript">
-//empty (jav leftovers)
+
 </script>
 <script type="text/javascript">
 
@@ -61,7 +63,7 @@ function mergeTimeSeries(series){
 }
 
 function getData(){
-	$.getJSON("http://localhost:8080/rrd/json/my_rrd/1356364800/1356379500/server1/server2/?callback=?",
+	$.getJSON("http://localhost:8080/rrd/json/my_first_metric/1356364800/1356894900/server2/?callback=?",
 	    function(data){
 	    	console.log(data);
 	    	var graphData=[];
@@ -85,12 +87,12 @@ function getData(){
 	    	console.log(graphData);
 
 	    	console.log(graphData.toString());
-	  		g2 = new Dygraph(document.getElementById("graphdiv2"),
+	  		var g1 = new Dygraph(document.getElementById("graphdiv1"),
             			graphData,
                        	{
-                        	
-                       	});  	
-	    }
+                       	});
+	  		
+		}
 	);
 //[ [ new Date("2008/05/07"), 175],
 //  [ new Date("2008/05/08"), 170],
@@ -100,12 +102,18 @@ function getData(){
 
 </script>
 </head>
+
 <body onLoad="getData();">
 Graph below
-    <div id="graphdiv2"></div>
+    <div id="graphdiv1"></div>
     <script type="text/javascript">
       
     </script>
 Graph above
+<div id="graphdiv2"></div>
+<script type="text/javascript">
+  
+</script>
+
 </body>
 </html>
