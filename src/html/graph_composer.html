@@ -159,15 +159,38 @@ function addColumnEditor() {
 
     row  = table.appendChild(document.createElement("tr"));
     cell = row.appendChild(document.createElement("td"));
-    textarea= cell.appendChild(document.createElement("textarea"));
-    textarea.setAttribute("id", "textarea_"+id);
-    textarea.setAttribute("rows", 10);
-    textarea.setAttribute("cols", 20);
+    var input = cell.appendChild(document.createElement("input"));
+    input.setAttribute("id", "input_"+id);
+    input.setAttribute("type", "text");
+    input.setAttribute("width", 20);
+    input.setAttribute("value", "http://localhost:8080/rrd/json/RRD/LOWTIME/HIGHTIME/SERVER?callback=?")
+
+    var button = cell.appendChild(document.createElement("input"));
+    button.setAttribute("id", "fetch_"+id);
+    button.setAttribute("type", "button");
+    button.setAttribute("width", 10);
+    button.setAttribute("value", "Fetch")
+    button.setAttribute("onClick", "alert('Fetch new data');");
     
     row  = table.appendChild(document.createElement("tr"));
     cell = row.appendChild(document.createElement("td"));
     textarea= cell.appendChild(document.createElement("textarea"));
-    textarea.setAttribute("id", "textarea_"+id);
+    textarea.setAttribute("id", "eval_text_"+id);
+    textarea.setAttribute("rows", 10);
+    textarea.setAttribute("cols", 20);
+
+    
+    button = cell.appendChild(document.createElement("input"));
+    button.setAttribute("id", "eval_"+id);
+    button.setAttribute("type", "button");
+    button.setAttribute("width", 10);
+    button.setAttribute("value", "Eval!")
+    button.setAttribute("onClick", "updateResult(\""+id+"\");");
+    
+    row  = table.appendChild(document.createElement("tr"));
+    cell = row.appendChild(document.createElement("td"));
+    textarea= cell.appendChild(document.createElement("textarea"));
+    textarea.setAttribute("id", "result_"+id);
     textarea.setAttribute("rows", 10);
     textarea.setAttribute("cols", 20);
     
@@ -175,6 +198,10 @@ function addColumnEditor() {
     drawGraphForColumnEditor(id, "my_second_metric", "server1", 1356822000, 1356897400);
     //redrawGraphs();
 }
+
+var globalValueTransform = {};
+var globalDataStore = {};
+var globalGraphStore = {};
 
 function drawGraphForColumnEditor(id, rrd, server, lowTime, highTime){
 	console.log("drawGraphForColumnEditor( "+id+", "+rrd+", "+server+", "+lowTime+", "+highTime+" )");
@@ -199,13 +226,40 @@ function drawGraphForColumnEditor(id, rrd, server, lowTime, highTime){
 				console.log("Data Merged -> drawGraphs()");
 				console.log("graphData size: " + graphData.length);
 				
-				// It'd be nice if this was an update rather than a replacement
-				var g1 = new Dygraph(document.getElementById("div_"+id),
-						graphData,
-						{
-						});
+				globalDataStore[id]=graphData;
+				
+				if (! (id  in globalGraphStore)){
+					globalGraphStore[id] = new Dygraph(document.getElementById("div_"+id),
+							[],
+							{
+							});
+				}else{
+					globalGraphStore[id].updateOptions({file: durations});
+				}
+				
+				
+				updateResult(id);
 	});
 	
+}
+
+function transformData(id){
+	var transform = document.getElementById("eval_text_"+id);
+	if(0 >= transform.value.length)
+		return "test-text";
+	else 
+		return eval(transform.value);
+}
+
+function updateResult(id){
+	console.log("updateresult("+id+")");
+	var elm = document.getElementById("result_"+id);
+	elm.value = globalDataStore[id] = transformData(id);
+	var g1 = new Dygraph(document.getElementById("div_"+id),
+			globalDataStore[id],
+			{
+			});
+	console.log("Updated graph element!");
 }
 
 google.load("visualization", "1", {packages:["corechart"]});
@@ -226,6 +280,22 @@ Graph above
 
 </tr>
 </table>
+
+<div>
+Example text
+<pre>
+function t(val){
+  time = val[0];
+  value = val[1]/max;
+  return [time,value];
+}
+var max=globalDataStore[id][0][1];
+for(var i=0; i < globalDataStore[id].length; i++) {
+  max = Math.max(globalDataStore[id][i][1], max);
+}
+globalDataStore[id].map(t);
+</pre>
+</div>
 
 </body>
 </html>
