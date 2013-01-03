@@ -99,6 +99,10 @@ function getData(){
 		    return query_string;
 		} ();
 
+	var t = queryString.t;
+    var lowTime = Math.min(t[0], t[1]);
+    var highTime = Math.max(t[0], t[1]);
+    
 	// String rrd
 	// String[] servers
 	console.log(queryString);
@@ -107,7 +111,7 @@ function getData(){
 		serversAsUrl += queryString.servers[i]+ "/";
 	}
 	
-	var graphQuery = "http://localhost:8080/rrd/json/"+queryString.rrd+"/1356364800/1356894900/"+serversAsUrl+"?callback=?";
+	var graphQuery = "http://localhost:8080/rrd/json/"+queryString.rrd+"/"+lowTime+"/"+highTime+"/"+serversAsUrl+"?callback=?";
 	console.log("Graph query: "+graphQuery);
 	$.getJSON(graphQuery,
 	    function(data){

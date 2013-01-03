@@ -1,3 +1,7 @@
+# Check the graphs with
+# URL file:///<pathToWorkspace/rrd4web/src/html/simple_graph.html?t=1356822000&t=1356897400&rrd=my_second_metric&servers=server1&servers=server2
+# (fix the path to your dir)
+
 #RRDs for testing generated with:
 for SRV in server{1,2,3}; do for METRIC in my_{first,second,third}_metric; do rrdtool create --start 1356822000 $SRV-$METRIC.rrd DS:$METRIC:GAUGE:1800:U:U RRA:AVERAGE:0.5:1:1200 RRA:MAX:0.5:1:1200 RRA:MIN:0.5:1:1200; done; done
 
