@@ -1,0 +1,231 @@
+<html>
+<head>
+<script type="text/javascript" src="js/dygraph-combined.js"></script>
+<script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script type="text/javascript">
+function drawGraphs(graphData){
+	console.log(graphData);
+	console.log("drawDyGraph()");
+	var g1 = new Dygraph(document.getElementById("graphdiv1"),
+							graphData,
+							{
+							});
+
+	var data = google.visualization.arrayToDataTable(
+	                                                  graphData
+	                                                  , false);
+
+	var options = {
+			title: 'Company Performance'
+	};
+	var g2= new google.visualization.LineChart(document.getElementById('graphdiv2'));
+	g2.draw(data, options);
+}
+
+function timeSeriesToSet(series){
+	//A series is ['hostname', [[t,v], ..., [t,v]]]
+	var retDict={};
+	var tSeries = series[1];
+	
+	for(var timeVal in tSeries){
+		retDict[tSeries[timeVal][0]] = tSeries[timeVal][1];
+	}
+	return retDict;
+}
+
+function mergeTimeSets(timeStampSet, seriesSets){
+	for(var i=0; i<seriesSets.length;i++){
+		for(var time in seriesSets[i]){
+			timeStampSet[time]=true;
+		}
+	}
+	return timeStampSet;
+}
+
+function timeStampSetToSeries(timeStampSet, seriesSets){
+	var retArray = [];
+	timeStamps = Object.keys(timeStampSet).sort();
+	for(var i=0; i< timeStamps.length; i++){
+		var time = timeStamps[i];	
+		var timeArr = [time];
+		for(var j in seriesSets){
+			var seriesSet=seriesSets[j];
+			if(seriesSet.hasOwnProperty(time)){
+				timeArr.push(seriesSet[time]);
+			} else {
+				timeArr.push(null);
+			}
+		}
+		retArray.push(timeArr);
+	}
+	return retArray;
+}
+
+function mergeTimeSeries(series){
+	var timeStampSet = {};
+	var timeSeriesOrder=[];
+	var seriesAsSets = [];
+ 	for(var i=0;i < series.length; i++){
+ 		timeSeriesOrder.push(series[i][0]);
+  		seriesAsSets.push(timeSeriesToSet(series[i]));
+ 	}
+	mergeTimeSets(timeStampSet, seriesAsSets);
+	return timeStampSetToSeries(timeStampSet, seriesAsSets);
+}
+
+function getData(){
+	var queryString = function () {
+		  // This function is anonymous, is executed immediately and 
+		  // the return value is assigned to QueryString!
+		  var query_string = {};
+		  var query = window.location.search.substring(1);
+		  var vars = query.split("&");
+		  for (var i=0;i<vars.length;i++) {
+		    var pair = vars[i].split("=");
+		    	// If first entry with this name
+		    if (typeof query_string[pair[0]] === "undefined") {
+		      query_string[pair[0]] = pair[1];
+		    	// If second entry with this name
+		    } else if (typeof query_string[pair[0]] === "string") {
+		      var arr = [ query_string[pair[0]], pair[1] ];
+		      query_string[pair[0]] = arr;
+		    	// If third or later entry with this name
+		    } else {
+		      query_string[pair[0]].push(pair[1]);
+		    }
+		  } 
+		    return query_string;
+		} ();
+
+	var t = queryString.t;
+    var lowTime = Math.min(t[0], t[1]);
+    var highTime = Math.max(t[0], t[1]);
+    
+	// String rrd
+	// String[] servers
+	console.log(queryString);
+	var serversAsUrl = "";
+	for(var i=0; i < queryString.servers.length; i++){
+		serversAsUrl += queryString.servers[i]+ "/";
+	}
+	
+	var graphQuery = "http://localhost:8080/rrd/json/"+queryString.rrd+"/"+lowTime+"/"+highTime+"/"+serversAsUrl+"?callback=?";
+	console.log("Graph query: "+graphQuery);
+	$.getJSON(graphQuery,
+	    function(data){
+			console.log("getJSON()");
+	    	console.log("data: " + data);
+	    	var graphData=[];
+
+			var setOfTimeStamps = {}
+	    	for(var host in data){
+	    		for(var i=0; i < data[host].length; i++){
+	    			setOfTimeStamps[data[host][i][0]] = true;
+	    		}
+	    	}
+
+			tsdata = [];
+			for(var host in data){
+				tsdata.push( [host, data[host]] );
+			}
+			graphData = mergeTimeSeries(tsdata);
+			console.log("Data Merged -> drawGraphs()");
+			console.log("graphData size: " + graphData.length);
+			
+	    	drawGraphs(graphData);
+		}
+	);
+//[ [ new Date("2008/05/07"), 175],
+//  [ new Date("2008/05/08"), 170],
+//  [ new Date("2008/05/09"), 180]
+//];
+}
+
+// Global column editor id
+var columnEditorCounter=0;
+
+function addColumnEditor() {
+    columnEditorCounter++;	 
+    //Create an input type dynamically.
+    var id="column_"+columnEditorCounter;
+    var table= document.createElement("table");
+    table.setAttribute("id", "table_"+id);
+    var row  = table.appendChild(document.createElement("tr"));
+    var cell = row.appendChild(document.createElement("td"));
+    var div  = cell.appendChild(document.createElement("div"));
+    div.setAttribute("id", "div_"+id);
+
+    row  = table.appendChild(document.createElement("tr"));
+    cell = row.appendChild(document.createElement("td"));
+    textarea= cell.appendChild(document.createElement("textarea"));
+    textarea.setAttribute("id", "textarea_"+id);
+    textarea.setAttribute("rows", 10);
+    textarea.setAttribute("cols", 20);
+    
+    row  = table.appendChild(document.createElement("tr"));
+    cell = row.appendChild(document.createElement("td"));
+    textarea= cell.appendChild(document.createElement("textarea"));
+    textarea.setAttribute("id", "textarea_"+id);
+    textarea.setAttribute("rows", 10);
+    textarea.setAttribute("cols", 20);
+    
+    document.getElementById("numberTransformers").appendChild(document.createElement("td")).appendChild(table);
+    drawGraphForColumnEditor(id, "my_second_metric", "server1", 1356822000, 1356897400);
+    //redrawGraphs();
+}
+
+function drawGraphForColumnEditor(id, rrd, server, lowTime, highTime){
+	console.log("drawGraphForColumnEditor( "+id+", "+rrd+", "+server+", "+lowTime+", "+highTime+" )");
+
+	var graphQuery = "http://localhost:8080/rrd/json/"+rrd+"/"+lowTime+"/"+highTime+"/"+server+"?callback=?";
+	$.getJSON(graphQuery,
+		    function(data){
+				console.log("getJSON()");
+		    	console.log("data: " + data);
+		    	var graphData=[];
+				var setOfTimeStamps = {}
+		    	for(var host in data){
+		    		for(var i=0; i < data[host].length; i++){
+		    			setOfTimeStamps[data[host][i][0]] = true;
+		    		}
+		    	}
+				tsdata = [];
+				for(var host in data){
+					tsdata.push( [host, data[host]] );
+				}
+				graphData = mergeTimeSeries(tsdata);
+				console.log("Data Merged -> drawGraphs()");
+				console.log("graphData size: " + graphData.length);
+				
+				// It'd be nice if this was an update rather than a replacement
+				var g1 = new Dygraph(document.getElementById("div_"+id),
+						graphData,
+						{
+						});
+	});
+	
+}
+
+google.load("visualization", "1", {packages:["corechart"]});
+google.setOnLoadCallback(getData);
+
+</script>
+
+</head>
+
+<body>
+Graph below
+<div id="graphdiv1"></div>
+Graph above
+<div id="graphdiv2"></div>
+<INPUT type="button" value="Add" onclick="addColumnEditor()"/>
+<table border=1>
+<tr id="numberTransformers">
+
+</tr>
+</table>
+
+</body>
+</html>
