@@ -5,27 +5,24 @@
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
 <script type="text/javascript">
-	google.load("visualization", "1", {packages:["corechart"]});
-	google.setOnLoadCallback(drawChart);
-	function drawChart() {
-		var data = google.visualization.arrayToDataTable([
-		    ['Year', 'Sales', 'Expenses'],
-		    ['2004',  1000,      400],
-            ['2005',  1170,      460],
-            ['2006',  660,       1120],
-            ['2007',  1030,      540]
-        ]);
+function drawGraphs(graphData){
+	console.log(graphData);
+	console.log("drawDyGraph()");
+	var g1 = new Dygraph(document.getElementById("graphdiv1"),
+							graphData,
+							{
+							});
 
-		var options = {
-            title: 'Company Performance'
-        };
-		var g2= new google.visualization.LineChart(document.getElementById('graphdiv2'));
-	    g2.draw(data, options);
+	var data = google.visualization.arrayToDataTable(
+	                                                  graphData
+	                                                  , false);
 
-	}
-
-</script>
-<script type="text/javascript">
+	var options = {
+			title: 'Company Performance'
+	};
+	var g2= new google.visualization.LineChart(document.getElementById('graphdiv2'));
+	g2.draw(data, options);
+}
 
 function timeSeriesToSet(series){
 	//A series is ['hostname', [[t,v], ..., [t,v]]]
@@ -48,12 +45,10 @@ function mergeTimeSets(timeStampSet, seriesSets){
 }
 
 function timeStampSetToSeries(timeStampSet, seriesSets){
-	console.log("timeStampSetToSeries()");
 	var retArray = [];
 	timeStamps = Object.keys(timeStampSet).sort();
 	for(var i=0; i< timeStamps.length; i++){
-		var time = timeStamps[i];
-		console.log("timeStampSetToSeries(): time:"+time);	
+		var time = timeStamps[i];	
 		var timeArr = [time];
 		for(var j in seriesSets){
 			var seriesSet=seriesSets[j];
@@ -81,57 +76,80 @@ function mergeTimeSeries(series){
 }
 
 function getData(){
-	$.getJSON("http://localhost:8080/rrd/json/my_first_metric/1356364800/1356894900/server2/?callback=?",
+	var queryString = function () {
+		  // This function is anonymous, is executed immediately and 
+		  // the return value is assigned to QueryString!
+		  var query_string = {};
+		  var query = window.location.search.substring(1);
+		  var vars = query.split("&");
+		  for (var i=0;i<vars.length;i++) {
+		    var pair = vars[i].split("=");
+		    	// If first entry with this name
+		    if (typeof query_string[pair[0]] === "undefined") {
+		      query_string[pair[0]] = pair[1];
+		    	// If second entry with this name
+		    } else if (typeof query_string[pair[0]] === "string") {
+		      var arr = [ query_string[pair[0]], pair[1] ];
+		      query_string[pair[0]] = arr;
+		    	// If third or later entry with this name
+		    } else {
+		      query_string[pair[0]].push(pair[1]);
+		    }
+		  } 
+		    return query_string;
+		} ();
+
+	// String rrd
+	// String[] servers
+	console.log(queryString);
+	var serversAsUrl = "";
+	for(var i=0; i < queryString.servers.length; i++){
+		serversAsUrl += queryString.servers[i]+ "/";
+	}
+	
+	var graphQuery = "http://localhost:8080/rrd/json/"+queryString.rrd+"/1356364800/1356894900/"+serversAsUrl+"?callback=?";
+	console.log("Graph query: "+graphQuery);
+	$.getJSON(graphQuery,
 	    function(data){
-	    	console.log(data);
+			console.log("getJSON()");
+	    	console.log("data: " + data);
 	    	var graphData=[];
 
 			var setOfTimeStamps = {}
 	    	for(var host in data){
-	    		console.log(host + ":"+ data[host].toString() +"("+data[host].length+")");
 	    		for(var i=0; i < data[host].length; i++){
 	    			setOfTimeStamps[data[host][i][0]] = true;
 	    		}
 	    	}
-	    	console.log(Object.keys(setOfTimeStamps).sort().toString());
 
 			tsdata = [];
 			for(var host in data){
 				tsdata.push( [host, data[host]] );
 			}
-			console.log("tsdata: "+tsdata.toString());
 			graphData = mergeTimeSeries(tsdata);
-
-	    	console.log(graphData);
-
-	    	console.log(graphData.toString());
-	  		var g1 = new Dygraph(document.getElementById("graphdiv1"),
-            			graphData,
-                       	{
-                       	});
-	  		
+			console.log("Data Merged -> drawGraphs()");
+			console.log("graphData size: " + graphData.length);
+			
+	    	drawGraphs(graphData);
 		}
 	);
 //[ [ new Date("2008/05/07"), 175],
 //  [ new Date("2008/05/08"), 170],
 //  [ new Date("2008/05/09"), 180]
 //];
-};
+}
+
+google.load("visualization", "1", {packages:["corechart"]});
+google.setOnLoadCallback(getData);
 
 </script>
+
 </head>
 
-<body onLoad="getData();">
+<body>
 Graph below
-    <div id="graphdiv1"></div>
-    <script type="text/javascript">
-      
-    </script>
+<div id="graphdiv1"></div>
 Graph above
 <div id="graphdiv2"></div>
-<script type="text/javascript">
-  
-</script>
-
 </body>
 </html>
