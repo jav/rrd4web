@@ -2,7 +2,6 @@
 <head>
 <script type="text/javascript" src="js/dygraph-combined.js"></script>
 <script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
 <script type="text/javascript">
 function drawGraphs(graphData){
@@ -13,15 +12,9 @@ function drawGraphs(graphData){
 							{
 							});
 
-	var data = google.visualization.arrayToDataTable(
-	                                                  graphData
-	                                                  , false);
-
 	var options = {
 			title: 'Company Performance'
 	};
-	var g2= new google.visualization.LineChart(document.getElementById('graphdiv2'));
-	g2.draw(data, options);
 }
 
 function timeSeriesToSet(series){
@@ -137,10 +130,6 @@ function getData(){
 	    	drawGraphs(graphData);
 		}
 	);
-//[ [ new Date("2008/05/07"), 175],
-//  [ new Date("2008/05/08"), 170],
-//  [ new Date("2008/05/09"), 180]
-//];
 }
 
 // Global column editor id
@@ -163,14 +152,14 @@ function addColumnEditor() {
     input.setAttribute("id", "input_"+id);
     input.setAttribute("type", "text");
     input.setAttribute("width", 20);
-    input.setAttribute("value", "http://localhost:8080/rrd/json/RRD/LOWTIME/HIGHTIME/SERVER?callback=?")
+    input.setAttribute("value", "http://localhost:8080/rrd/json/my_first_metric/1356822000/1356897400/server1?callback=?")
 
     var button = cell.appendChild(document.createElement("input"));
     button.setAttribute("id", "fetch_"+id);
     button.setAttribute("type", "button");
     button.setAttribute("width", 10);
     button.setAttribute("value", "Fetch")
-    button.setAttribute("onClick", "alert('Fetch new data');");
+    button.setAttribute("onClick", "updateResult(\""+id+"\");");
     
     row  = table.appendChild(document.createElement("tr"));
     cell = row.appendChild(document.createElement("td"));
@@ -246,7 +235,7 @@ function drawGraphForColumnEditor(id, rrd, server, lowTime, highTime){
 function transformData(id){
 	var transform = document.getElementById("eval_text_"+id);
 	if(0 >= transform.value.length)
-		return "test-text";
+		return globalDataStore[id];
 	else 
 		return eval(transform.value);
 }
@@ -262,14 +251,11 @@ function updateResult(id){
 	console.log("Updated graph element!");
 }
 
-google.load("visualization", "1", {packages:["corechart"]});
-google.setOnLoadCallback(getData);
-
 </script>
 
 </head>
 
-<body>
+<body onLoad="getData();">
 Graph below
 <div id="graphdiv1"></div>
 Graph above
