@@ -3,10 +3,14 @@
 # (fix the path to your dir)
 
 #RRDs for testing generated with:
-for SRV in server{1,2,3}; do for METRIC in my_{first,second,third}_metric; do rrdtool create --start 1356822000 $SRV-$METRIC.rrd DS:$METRIC:GAUGE:1800:U:U RRA:AVERAGE:0.5:1:1200 RRA:MAX:0.5:1:1200 RRA:MIN:0.5:1:1200; done; done
+for SRVNR in 1 2 3; do for METRIC in my_{first,second,third}_metric; do rrdtool create --start 1356822000 server$SRVNR-$METRIC.rrd DS:$METRIC:GAUGE:1800:U:U RRA:AVERAGE:0.5:1:1200 RRA:MAX:0.5:1:1200 RRA:MIN:0.5:1:1200; done; done
 
 
 #Data added to them by:
 
-for TIME in $(seq 1356822300 300 1356897400); do for SRV in server{1,2,3}; do for METRIC in my_{first,second,third}_metric; \
-do rrdtool update $SRV-$METRIC.rrd $TIME:$RANDOM; done; done; done
+# old # for TIME in $(seq 1356822300 300 1356897400); do for SRV in server{1,2,3}; do for METRIC in my_{first,second,third}_metric; \
+#do rrdtool update $SRV-$METRIC.rrd $TIME:$RANDOM; done; done; done
+
+for TIME in $(seq 1356822300 300 1356897400); do for SRVNR in 1 2 3; do rrdtool update server$SRVNR-my_first_metric.rrd $TIME:$(echo "s(($TIME/(100*$SRVNR))*4*a(1)/180)"|bc -l); done; done;
+for TIME in $(seq 1356822300 300 1356897400); do for SRVNR in 1 2 3; do rrdtool update server$SRVNR-my_second_metric.rrd $TIME:$(echo "s(($TIME/(100*$SRVNR))*4*a(1)/180)+1"|bc -l); done; done;
+for TIME in $(seq 1356822300 300 1356897400); do for SRVNR in 1 2 3; do rrdtool update server$SRVNR-my_third_metric.rrd $TIME:$(echo "s(($TIME/(100*$SRVNR))*4*a(1)/180)+2"|bc -l); done; done;
